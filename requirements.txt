@@ -1,0 +1,14 @@
+numpy
+torch
+torchvision
+h5py
+pyyaml
+tqdm
+torcheval
+tensorboard
+matplotlib
+seaborn
+pandas
+pytest
+ruff
+pre-commit

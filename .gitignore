@@ -2,3 +2,10 @@ train_set/
 test_set/
 data/
 *.zip
+__pycache__/
+*.pyc
+experiments/logs/
+experiments/results/
+.env
+.DS_Store
+*.egg-info/
