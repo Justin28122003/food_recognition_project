@@ -1,1 +1,1 @@
-# food_recognition_project
+# Food Recognition Challenge
