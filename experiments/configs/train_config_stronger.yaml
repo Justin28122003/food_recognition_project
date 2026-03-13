@@ -1,24 +1,26 @@
-experiment_name: "food_recognition_baseline"
+experiment_name: "food_recognition_stronger_baseline"
 seed: 42
 
 data:
-  batch_size: 32
-  num_workers: 2
+  batch_size: 64
+  num_workers: 4
   val_split: 0.2
   image_size: [224, 224]
 
 model:
-  name: "resnet18"
+  name: "resnet34"
   num_classes: 80
   pretrained: false
   freeze_backbone: false
   dropout: 0.2
 
 training:
-  epochs: 10
-  optimizer: "adamw"
+  epochs: 20
+  optimizer: "sgd"
   scheduler: "cosine"
-  learning_rate: 0.0003
+  learning_rate: 0.05
   min_learning_rate: 0.000001
-  weight_decay: 0.0001
+  momentum: 0.9
+  weight_decay: 0.0005
+  label_smoothing: 0.05
   save_dir: "./experiments/results"

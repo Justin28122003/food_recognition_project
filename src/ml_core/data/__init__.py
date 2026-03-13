@@ -1,4 +1,3 @@
-from .loader import get_dataloaders
-from .pcam import PCAMDataset
+from .loader import FoodDataset, get_data_paths, get_dataloaders
 
-__all__ = ["get_dataloaders", "PCAMDataset"]
+__all__ = ["FoodDataset", "get_data_paths", "get_dataloaders"]

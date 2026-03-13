@@ -1,4 +1,3 @@
-from .mlp import MLP
+from .cnn import TorchvisionClassifier, create_model
 
-# This stops linters from thinking MLP is "unused".
-__all__ = ["MLP"]
+__all__ = ["TorchvisionClassifier", "create_model"]
