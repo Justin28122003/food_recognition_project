@@ -28,4 +28,4 @@ source .venv-snellius/bin/activate
 python --version
 nvidia-smi || true
 
-srun python experiments/train.py --config "$CONFIG_PATH"
+python experiments/train.py --config "$CONFIG_PATH"

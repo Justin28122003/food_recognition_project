@@ -9,3 +9,6 @@ experiments/results/
 .env
 .DS_Store
 *.egg-info/
+.venv-snellius/
+slurm-*.out
+slurm-*.err
