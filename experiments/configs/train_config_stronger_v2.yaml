@@ -1,8 +1,8 @@
-experiment_name: "food_recognition_resnet34_adamw"
+experiment_name: "food_recognition_resnet34_adamw_v2"
 seed: 42
 
 data:
-  batch_size: 64
+  batch_size: 32
   num_workers: 4
   val_split: 0.2
   image_size: [224, 224]
@@ -15,11 +15,11 @@ model:
   dropout: 0.2
 
 training:
-  epochs: 50
+  epochs: 40
   optimizer: "adamw"
   scheduler: "cosine"
   learning_rate: 0.0005
   min_learning_rate: 0.000001
-  weight_decay: 0.0002
+  weight_decay: 0.0005
   label_smoothing: 0.05
   save_dir: "./experiments/results"

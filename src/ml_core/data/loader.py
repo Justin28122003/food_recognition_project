@@ -119,13 +119,13 @@ def get_train_transform(image_size: Tuple[int, int] = (224, 224)) -> transforms.
     resize_base = int(max(image_size) * 1.1)
     return transforms.Compose([
         transforms.Resize((resize_base, resize_base)),
-        transforms.RandomResizedCrop(image_size, scale=(0.65, 1.0), ratio=(0.75, 1.33)),
+        transforms.RandomResizedCrop(image_size, scale=(0.8, 1.0), ratio=(0.85, 1.15)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(20),
-        transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2, hue=0.02),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.15, hue=0.02),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
-        transforms.RandomErasing(p=0.25, scale=(0.02, 0.15), ratio=(0.3, 3.3)),
+        transforms.RandomErasing(p=0.10, scale=(0.02, 0.08), ratio=(0.5, 2.0)),
     ])
 
 

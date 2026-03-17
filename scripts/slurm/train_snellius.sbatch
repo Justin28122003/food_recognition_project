@@ -14,7 +14,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="${PROJECT_ROOT:-${SLURM_SUBMIT_DIR:-$PWD}}"
-CONFIG_PATH="${1:-experiments/configs/train_config_stronger.yaml}"
+CONFIG_PATH="${1:-experiments/configs/train_config_stronger_v2.yaml}"
 
 cd "$PROJECT_ROOT"
 
