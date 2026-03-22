@@ -57,6 +57,7 @@ def _evaluate_variant(
             pred_cpu = predictions.cpu().tolist()
             target_cpu = targets.cpu().tolist()
             conf_cpu = confidences.cpu().tolist()
+            top5_cpu = top5_correct.cpu().tolist()
 
             for true_label, pred_label, is_correct in zip(target_cpu, pred_cpu, batch_correct.cpu().tolist()):
                 per_class_examples[true_label] += 1
@@ -64,11 +65,12 @@ def _evaluate_variant(
                     per_class_correct[true_label] += 1
                 confusion_matrix[true_label, pred_label] += 1
 
-            for img_name, true_label, pred_label, confidence in zip(
+            for img_name, true_label, pred_label, confidence, is_top5_correct in zip(
                 img_names,
                 target_cpu,
                 pred_cpu,
                 conf_cpu,
+                top5_cpu,
             ):
                 prediction_rows.append(
                     {
@@ -77,6 +79,7 @@ def _evaluate_variant(
                         "true_label": int(true_label),
                         "pred_label": int(pred_label),
                         "correct": int(pred_label == true_label),
+                        "top5_correct": int(is_top5_correct),
                         "confidence": float(confidence),
                     }
                 )
@@ -96,7 +99,8 @@ def _evaluate_variant(
         class_accuracy = class_correct / class_examples if class_examples > 0 else 0.0
         per_class_rows.append(
             {
-                "class_idx": class_idx,
+                "eval_variant": variant,
+                "class_index": class_idx,
                 "num_examples": class_examples,
                 "num_correct": class_correct,
                 "accuracy": class_accuracy,
@@ -172,8 +176,8 @@ def main(args) -> None:
     summary_df.to_csv(summary_path, index=False)
 
     for row in per_class_rows:
-        class_idx = row["class_idx"]
-        row["class_name"] = class_names[class_idx] if 0 <= class_idx < len(class_names) else ""
+        class_index = row["class_index"]
+        row["class_name"] = class_names[class_index] if 0 <= class_index < len(class_names) else ""
     per_class_path = output_dir / "per_class_metrics.csv"
     pd.DataFrame(per_class_rows).to_csv(per_class_path, index=False)
 
