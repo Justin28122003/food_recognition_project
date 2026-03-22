@@ -1,0 +1,7 @@
+eval_variant: clean
+checkpoint_path: experiments/results/food_recognition_stronger_baseline/best.pt
+config_path: experiments/configs/train_config_stronger_v3.yaml
+loss: 3.8237344019361985
+accuracy: 0.11317981381675649
+top5_accuracy: 0.35407479993467256
+num_examples: 6123
