@@ -19,6 +19,8 @@ DISPLAY_LABELS = {
     "crop": "Crop",
     "occlusion": "Occlusion",
 }
+ROBUST_CLEAN_ACC_THRESHOLD = 0.30
+TOP_K = 5
 
 
 def parse_args() -> argparse.Namespace:
@@ -68,6 +70,10 @@ def _annotate_horizontal_bars(ax: plt.Axes, fmt: str = "{:.2f}", pad_frac: float
         width = patch.get_width()
         y = patch.get_y() + patch.get_height() / 2
         ax.text(width + offset, y, fmt.format(width), ha="left", va="center", fontsize=10)
+
+
+def _format_class_display_label(series: pd.Series) -> pd.Series:
+    return series.astype(str).str.replace("_", " ", regex=False)
 
 
 def _read_yaml(path: Path) -> Dict:
@@ -189,6 +195,7 @@ def build_per_class_tables(eval_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]
 
     drop_df["local_detail_score"] = drop_df["blur_drop"] + drop_df["lowres_drop"]
     drop_df["structure_score"] = drop_df["crop_drop"] + drop_df["occlusion_drop"]
+    drop_df["color_score"] = drop_df["grayscale_drop"]
 
     return per_class_wide, drop_df
 
@@ -236,63 +243,139 @@ def plot_per_class_drop_heatmap(drop_df: pd.DataFrame, output_dir: Path) -> None
     ordered = drop_df.sort_values("local_detail_score", ascending=False).reset_index(drop=True)
 
     matrix = ordered[heat_cols].to_numpy()
-    row_labels = ordered["class_name"].fillna(ordered["class_index"].astype(str)).astype(str).tolist()
+    row_labels = _format_class_display_label(
+        ordered["class_name"].fillna(ordered["class_index"].astype(str))
+    ).tolist()
     col_labels = [DISPLAY_LABELS[col.replace("_drop", "")] for col in heat_cols]
 
     plt.figure(figsize=(11.5, 18))
     ax = sns.heatmap(
         matrix,
-        cmap="rocket_r",
+        cmap="vlag",
+        center=0,
         xticklabels=col_labels,
-        yticklabels=False,
+        yticklabels=row_labels,
         cbar_kws={"label": "Accuracy drop vs clean"},
     )
-
-    step = max(1, len(row_labels) // 40)
-    y_ticks = list(range(0, len(row_labels), step))
-    ax.set_yticks([idx + 0.5 for idx in y_ticks])
-    ax.set_yticklabels([row_labels[idx] for idx in y_ticks], fontsize=7)
+    ax.tick_params(axis="y", labelsize=7)
 
     ax.set_xlabel("Variant")
-    ax.set_ylabel("Class (sorted by local_detail_score)")
+    ax.set_ylabel("Class")
     ax.set_title("Per-Class Accuracy Drop by Evaluation Variant")
     plt.tight_layout()
     plt.savefig(output_dir / "per_class_drop_heatmap.png", dpi=250)
     plt.close()
 
 
-def plot_top10_local_detail_sensitive(drop_df: pd.DataFrame, output_dir: Path) -> None:
-    top10 = drop_df.nlargest(10, "local_detail_score").sort_values("local_detail_score")
-    labels = top10["class_name"].fillna(top10["class_index"].astype(str)).astype(str)
-    plot_df = top10.copy()
-    plot_df["label"] = labels
+def _plot_sensitive_vs_robust(
+    drop_df: pd.DataFrame,
+    score_col: str,
+    title: str,
+    x_label: str,
+    output_path: Path,
+) -> None:
+    sensitive = drop_df.nlargest(TOP_K, score_col).sort_values(score_col, ascending=False).copy()
 
-    plt.figure(figsize=(9.5, 6.2))
-    ax = sns.barplot(data=plot_df, y="label", x="local_detail_score", orient="h")
-    ax.set_xlabel("Local-detail sensitivity score")
+    robust_pool = drop_df[
+        (drop_df["clean_acc"] >= ROBUST_CLEAN_ACC_THRESHOLD) & (drop_df[score_col] >= 0)
+    ].copy()
+    robust = robust_pool.nsmallest(TOP_K, score_col).sort_values(score_col, ascending=True).copy()
+
+    sensitive["group"] = "Most sensitive"
+    robust["group"] = "Most robust"
+
+    plot_df = pd.concat([sensitive, robust], axis=0, ignore_index=True)
+    plot_df["group"] = pd.Categorical(
+        plot_df["group"],
+        categories=["Most sensitive", "Most robust"],
+        ordered=True,
+    )
+    plot_df["label"] = _format_class_display_label(
+        plot_df["class_name"].fillna(plot_df["class_index"].astype(str))
+    )
+
+    y_order = plot_df["label"].tolist()
+
+    plt.figure(figsize=(10.2, 7.2))
+    ax = sns.barplot(
+        data=plot_df,
+        y="label",
+        x=score_col,
+        hue="group",
+        orient="h",
+        dodge=False,
+        order=y_order,
+    )
+    ax.invert_yaxis()
+
+    separator_y = len(sensitive) - 0.5
+    ax.axhline(separator_y, color="gray", linewidth=1.0, alpha=0.7)
+
+    xmin, xmax = ax.get_xlim()
+    x_text = xmin + 0.02 * (xmax - xmin)
+    if len(sensitive) > 0:
+        y_sensitive = (len(sensitive) - 1) / 2
+        ax.text(
+            x_text,
+            y_sensitive,
+            "Most sensitive",
+            fontsize=10,
+            fontweight="bold",
+            va="center",
+            ha="left",
+            bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 2.0},
+        )
+    if len(robust) > 0:
+        y_robust = len(sensitive) + (len(robust) - 1) / 2
+        ax.text(
+            x_text,
+            y_robust,
+            "Most robust",
+            fontsize=10,
+            fontweight="bold",
+            va="center",
+            ha="left",
+            bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "none", "pad": 2.0},
+        )
+
+    ax.set_xlabel(x_label)
     ax.set_ylabel("Class")
-    ax.set_title("Most Local-Detail-Sensitive Classes")
+    ax.set_title(title)
+    ax.legend(title="", loc="upper left", bbox_to_anchor=(1.02, 1.0), borderaxespad=0)
     _annotate_horizontal_bars(ax)
-    plt.tight_layout()
-    plt.savefig(output_dir / "top10_local_detail_sensitive.png", dpi=250)
+    plt.tight_layout(rect=[0, 0, 0.84, 1])
+    plt.savefig(output_path, dpi=250)
     plt.close()
 
 
-def plot_top10_structure_sensitive(drop_df: pd.DataFrame, output_dir: Path) -> None:
-    top10 = drop_df.nlargest(10, "structure_score").sort_values("structure_score")
-    labels = top10["class_name"].fillna(top10["class_index"].astype(str)).astype(str)
-    plot_df = top10.copy()
-    plot_df["label"] = labels
+def plot_local_detail_sensitive_vs_robust(drop_df: pd.DataFrame, output_dir: Path) -> None:
+    _plot_sensitive_vs_robust(
+        drop_df=drop_df,
+        score_col="local_detail_score",
+        title="Local-Detail-Sensitive vs Robust Classes",
+        x_label="Local-detail sensitivity score",
+        output_path=output_dir / "local_detail_sensitive_vs_robust.png",
+    )
 
-    plt.figure(figsize=(9.5, 6.2))
-    ax = sns.barplot(data=plot_df, y="label", x="structure_score", orient="h")
-    ax.set_xlabel("Structure sensitivity score")
-    ax.set_ylabel("Class")
-    ax.set_title("Most Structure-Sensitive Classes")
-    _annotate_horizontal_bars(ax)
-    plt.tight_layout()
-    plt.savefig(output_dir / "top10_structure_sensitive.png", dpi=250)
-    plt.close()
+
+def plot_structure_sensitive_vs_robust(drop_df: pd.DataFrame, output_dir: Path) -> None:
+    _plot_sensitive_vs_robust(
+        drop_df=drop_df,
+        score_col="structure_score",
+        title="Structure-Sensitive vs Robust Classes",
+        x_label="Structure sensitivity score",
+        output_path=output_dir / "structure_sensitive_vs_robust.png",
+    )
+
+
+def plot_color_sensitive_vs_robust(drop_df: pd.DataFrame, output_dir: Path) -> None:
+    _plot_sensitive_vs_robust(
+        drop_df=drop_df,
+        score_col="color_score",
+        title="Color-Sensitive vs Robust Classes",
+        x_label="Color sensitivity score",
+        output_path=output_dir / "color_sensitive_vs_robust.png",
+    )
 
 
 def main() -> None:
@@ -313,8 +396,9 @@ def main() -> None:
     plot_overall_top1_accuracy(overall_df=overall_df, output_dir=output_dir)
     plot_overall_top1_drop(overall_df=overall_df, output_dir=output_dir)
     plot_per_class_drop_heatmap(drop_df=drop_df, output_dir=output_dir)
-    plot_top10_local_detail_sensitive(drop_df=drop_df, output_dir=output_dir)
-    plot_top10_structure_sensitive(drop_df=drop_df, output_dir=output_dir)
+    plot_local_detail_sensitive_vs_robust(drop_df=drop_df, output_dir=output_dir)
+    plot_structure_sensitive_vs_robust(drop_df=drop_df, output_dir=output_dir)
+    plot_color_sensitive_vs_robust(drop_df=drop_df, output_dir=output_dir)
 
     print(f"Saved analysis CSVs and plots to: {output_dir}")
 
