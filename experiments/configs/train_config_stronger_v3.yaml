@@ -1,8 +1,8 @@
-experiment_name: "food_recognition_resnet34_adamw"
+experiment_name: "food_recognition_resnet34_adamw_v3"
 seed: 42
 
 data:
-  batch_size: 64
+  batch_size: 32
   num_workers: 4
   val_split: 0.2
   image_size: [224, 224]
@@ -12,14 +12,17 @@ model:
   num_classes: 80
   pretrained: false
   freeze_backbone: false
-  dropout: 0.2
+  dropout: 0.3
 
 training:
-  epochs: 50
+  epochs: 60
   optimizer: "adamw"
   scheduler: "cosine"
   learning_rate: 0.0005
-  min_learning_rate: 0.000001
-  weight_decay: 0.0002
-  label_smoothing: 0.05
+  min_learning_rate: 0.000005
+  weight_decay: 0.001
+  label_smoothing: 0.1
+  mixup_alpha: 0.2
+  cutmix_alpha: 1.0
+  mix_prob: 0.5
   save_dir: "./experiments/results"
