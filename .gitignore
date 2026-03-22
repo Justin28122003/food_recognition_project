@@ -4,7 +4,11 @@ data/
 *.zip
 __pycache__/
 *.pyc
-experiments/results/
+
+experiments/results/*
+!experiments/results/analysis_outputs/
+!experiments/results/analysis_outputs/**
+
 .env
 .DS_Store
 *.egg-info/

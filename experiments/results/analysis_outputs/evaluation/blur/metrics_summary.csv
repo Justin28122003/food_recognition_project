@@ -1,0 +1,2 @@
+variant,num_examples,loss,accuracy,top5_accuracy
+blur,6123,3.3965655197101188,0.30393597909521475,0.5525069410419728

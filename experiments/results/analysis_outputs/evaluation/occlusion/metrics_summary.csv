@@ -1,0 +1,2 @@
+variant,num_examples,loss,accuracy,top5_accuracy
+occlusion,6123,2.53042059717236,0.4977951984321411,0.7560019598236158

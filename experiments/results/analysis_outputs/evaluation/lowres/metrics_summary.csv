@@ -1,0 +1,2 @@
+variant,num_examples,loss,accuracy,top5_accuracy
+lowres,6123,3.925384559643808,0.2095378082639229,0.42969132778049973

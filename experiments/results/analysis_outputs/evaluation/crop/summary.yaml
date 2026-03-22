@@ -1,0 +1,7 @@
+eval_variant: crop
+checkpoint_path: experiments/results/food_recognition_resnet34_adamw_v3/best.pt
+config_path: experiments/results/food_recognition_resnet34_adamw_v3/config.yaml
+loss: 2.744902209248123
+accuracy: 0.44455332353421523
+top5_accuracy: 0.699657030867222
+num_examples: 6123

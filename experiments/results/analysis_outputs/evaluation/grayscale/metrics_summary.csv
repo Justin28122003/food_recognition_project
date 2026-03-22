@@ -1,0 +1,2 @@
+variant,num_examples,loss,accuracy,top5_accuracy
+grayscale,6123,5.517237124909534,0.04654581087702107,0.14813000163318635

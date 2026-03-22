@@ -1,0 +1,7 @@
+eval_variant: blur
+checkpoint_path: experiments/results/food_recognition_resnet34_adamw_v3/best.pt
+config_path: experiments/results/food_recognition_resnet34_adamw_v3/config.yaml
+loss: 3.3965655197101188
+accuracy: 0.30393597909521475
+top5_accuracy: 0.5525069410419728
+num_examples: 6123

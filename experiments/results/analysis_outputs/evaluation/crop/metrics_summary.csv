@@ -1,0 +1,2 @@
+variant,num_examples,loss,accuracy,top5_accuracy
+crop,6123,2.744902209248123,0.44455332353421523,0.699657030867222
