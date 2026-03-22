@@ -14,7 +14,7 @@ from ml_core.data import get_data_paths, get_validation_dataloader, load_class_n
 from ml_core.models import create_model
 from ml_core.utils import load_config, seed_everything, setup_logger
 
-VALID_VARIANTS = ["clean", "blur", "grayscale", "crop", "occlusion"]
+VALID_VARIANTS = ["clean", "blur", "grayscale", "crop", "occlusion", "lowres"]
 
 
 def _evaluate_variant(

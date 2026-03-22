@@ -118,25 +118,37 @@ IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
-class FixedSquareOcclusion:
-    """Apply a deterministic centered black square to a PIL image."""
+class FixedMultiPatchOcclusion:
+    """Apply deterministic multi-patch black-square occlusion to a PIL image."""
 
-    def __init__(self, occlusion_ratio: float = 0.25) -> None:
-        self.occlusion_ratio = occlusion_ratio
+    def __init__(self, patch_ratio: float = 0.16) -> None:
+        self.patch_ratio = patch_ratio
+        # Fixed normalized centers for deterministic patch placement.
+        self.patch_centers = (
+            (0.22, 0.24),
+            (0.50, 0.50),
+            (0.78, 0.76),
+        )
 
     def __call__(self, image: Image.Image) -> Image.Image:
         width, height = image.size
-        square_w = max(1, int(width * self.occlusion_ratio))
-        square_h = max(1, int(height * self.occlusion_ratio))
-
-        left = (width - square_w) // 2
-        top = (height - square_h) // 2
-        right = left + square_w
-        bottom = top + square_h
+        square_w = max(1, int(width * self.patch_ratio))
+        square_h = max(1, int(height * self.patch_ratio))
 
         occluded = image.copy()
         draw = ImageDraw.Draw(occluded)
-        draw.rectangle([left, top, right, bottom], fill=(0, 0, 0))
+
+        for center_x_norm, center_y_norm in self.patch_centers:
+            center_x = int(center_x_norm * width)
+            center_y = int(center_y_norm * height)
+
+            left = max(0, center_x - square_w // 2)
+            top = max(0, center_y - square_h // 2)
+            right = min(width, left + square_w)
+            bottom = min(height, top + square_h)
+
+            draw.rectangle([left, top, right, bottom], fill=(0, 0, 0))
+
         return occluded
 
 
@@ -159,7 +171,7 @@ def get_eval_transform(
     variant: str = "clean",
 ) -> transforms.Compose:
     resize_base = int(max(image_size) * 1.1)
-    valid_variants = ("clean", "blur", "grayscale", "crop", "occlusion")
+    valid_variants = ("clean", "blur", "grayscale", "crop", "occlusion", "lowres")
 
     if variant not in valid_variants:
         raise ValueError(
@@ -199,11 +211,21 @@ def get_eval_transform(
             transforms.ToTensor(),
             transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
         ]
-    else:  # variant == "occlusion"
+    elif variant == "occlusion":
         ops = [
             transforms.Resize((resize_base, resize_base)),
             transforms.CenterCrop(image_size),
-            FixedSquareOcclusion(occlusion_ratio=0.25),
+            FixedMultiPatchOcclusion(patch_ratio=0.16),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+        ]
+    else:  # variant == "lowres"
+        lowres_size = (56, 56)
+        ops = [
+            transforms.Resize((resize_base, resize_base)),
+            transforms.CenterCrop(image_size),
+            transforms.Resize(lowres_size),
+            transforms.Resize(image_size),
             transforms.ToTensor(),
             transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
         ]

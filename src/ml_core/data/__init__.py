@@ -1,5 +1,5 @@
 from .loader import (
-	FixedSquareOcclusion,
+	FixedMultiPatchOcclusion,
 	FoodDataset,
 	get_data_paths,
 	get_dataloaders,
@@ -10,7 +10,7 @@ from .loader import (
 
 __all__ = [
 	"FoodDataset",
-	"FixedSquareOcclusion",
+	"FixedMultiPatchOcclusion",
 	"get_data_paths",
 	"get_dataloaders",
 	"get_eval_transform",

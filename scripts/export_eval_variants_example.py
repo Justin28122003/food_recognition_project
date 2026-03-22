@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,7 +19,7 @@ from ml_core.data.loader import (
 from ml_core.utils import load_config, seed_everything
 
 
-VALID_VARIANTS = ["clean", "blur", "grayscale", "crop", "occlusion"]
+VALID_VARIANTS = ["clean", "blur", "grayscale", "crop", "occlusion", "lowres"]
 
 
 def denormalize_image(image_tensor: torch.Tensor) -> torch.Tensor:
@@ -84,16 +85,20 @@ def save_single_variant(image_np, save_path: Path, title: str) -> None:
     plt.close()
 
 
-def save_combined_figure(images: dict[str, any], save_path: Path, img_name: str) -> None:
-    fig, axes = plt.subplots(1, len(images), figsize=(18, 4))
+def save_combined_figure(images: dict[str, Any], save_path: Path, img_name: str) -> None:
+    fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+    flat_axes = axes.flatten()
 
-    for ax, (variant, image_np) in zip(axes, images.items()):
+    for ax, (variant, image_np) in zip(flat_axes, images.items()):
         ax.imshow(image_np)
         ax.set_title(variant)
         ax.axis("off")
 
+    for ax in flat_axes[len(images):]:
+        ax.axis("off")
+
     fig.suptitle(f"Evaluation variants for {img_name}", fontsize=14)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig(save_path, dpi=250, bbox_inches="tight")
     plt.close(fig)
 
@@ -141,7 +146,7 @@ def main() -> None:
         image_index=args.image_index,
     )
 
-    rendered_images: dict[str, any] = {}
+    rendered_images: dict[str, Any] = {}
 
     for variant in VALID_VARIANTS:
         transform = get_eval_transform(image_size=image_size, variant=variant)
